@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vidyarthi Library — Seat Availability</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f14;--surface:#161922;--surface2:#1e2330;--border:rgba(255,255,255,0.07);--text:#f0f2f7;--muted:#6b7694;--green:#22c97a;--gdim:rgba(34,201,122,0.12);--red:#ff4e6a;--rdim:rgba(255,78,106,0.12);--accent:#5b8df6;--adim:rgba(91,141,246,0.12);--radius:12px;--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px}
+.topbar h1{font-family:var(--fh);font-size:22px;font-weight:800}
+.topbar h1 span{color:var(--accent)}
+.topbar .addr{font-size:11px;color:var(--muted);margin-top:3px}
+.topbar .mgr{font-size:12px;color:var(--muted);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap}
+.topbar .mgr span{color:var(--text)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gdim);border:1px solid rgba(34,201,122,.3);color:var(--green);font-size:11px;padding:4px 12px;border-radius:20px;margin-top:10px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px 20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.val{font-family:var(--fh);font-size:32px;font-weight:800;line-height:1}
+.lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.avail-banner{margin:0 20px 16px;border-radius:var(--radius);padding:18px;text-align:center}
+.avail-banner.has-free{background:var(--gdim);border:1px solid rgba(34,201,122,.3)}
+.avail-banner.full{background:var(--rdim);border:1px solid rgba(255,78,106,.3)}
+.avail-banner .big{font-family:var(--fh);font-size:26px;font-weight:800}
+.avail-banner.has-free .big{color:var(--green)}
+.avail-banner.full .big{color:var(--red)}
+.avail-banner p{font-size:13px;color:var(--muted);margin-top:4px}
+.legend{display:flex;gap:16px;padding:0 20px 12px;font-size:12px;color:var(--muted);align-items:center}
+.ldot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px}
+.filter-bar{padding:0 20px 14px;display:flex;gap:8px;flex-wrap:wrap}
+.fbtn{padding:8px 14px;border-radius:8px;font-family:var(--fb);font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted)}
+.fbtn.aa{background:var(--adim);border-color:var(--accent);color:var(--accent)}
+.fbtn.af{background:var(--gdim);border-color:var(--green);color:var(--green)}
+.fbtn.ao{background:var(--rdim);border-color:var(--red);color:var(--red)}
+.section-label{padding:0 20px 10px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.seat-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:0 20px 20px}
+.seat{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px solid transparent;transition:transform .12s;user-select:none}
+.seat.free{background:var(--gdim);border-color:rgba(34,201,122,.35)}
+.seat.occ{background:var(--rdim);border-color:rgba(255,78,106,.35);cursor:pointer}
+.seat.occ:hover{transform:scale(1.1)}
+.seat .sn{font-family:var(--fh);font-size:13px;font-weight:700}
+.seat.free .sn{color:var(--green)}
+.seat.occ .sn{color:var(--red)}
+.seat .st{font-size:8px;margin-top:1px}
+.seat.free .st{color:rgba(34,201,122,.6)}
+.seat.occ .st{color:rgba(255,78,106,.6)}
+#lastUpdated{font-size:11px;color:var(--muted);padding:0 20px 20px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.sheet{background:var(--surface);border:1px solid var(--border);border-radius:18px 18px 0 0;padding:24px 24px 32px;width:min(500px,100vw);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(80px);opacity:0}to{transform:translateY(0);opacity:1}}
+.handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 20px}
+.sheet h3{font-family:var(--fh);font-size:18px;font-weight:700;margin-bottom:16px}
+.sheet h3 span{color:var(--red)}
+.drow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.drow:last-of-type{border-bottom:none}
+.drow .key{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.drow .dval{font-size:14px;font-weight:500;text-align:right}
+.close-sheet{width:100%;margin-top:20px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:var(--fb);font-size:14px;cursor:pointer}
+@media(max-width:480px){.seat .st{display:none}.seat .sn{font-size:10px}.seat-grid{gap:4px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 <span>Vidyarthi</span> Library</h1>
+  <div class="addr">Radha Garden Phase 3, Kila Parikshitgarh, Meerut UP 250406</div>
+  <div class="mgr"><div>Manager: <span>Arvind Sharma</span></div><div>📞 <span>8923147948</span></div></div>
+  <div class="live-badge"><div class="live-dot"></div> Live — Auto Updates</div>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="val" id="sTotal" style="color:var(--accent)">101</div><div class="lbl">Total</div></div>
+  <div class="stat-card"><div class="val" id="sOcc" style="color:var(--red)">—</div><div class="lbl">Occupied</div></div>
+  <div class="stat-card"><div class="val" id="sFree" style="color:var(--green)">—</div><div class="lbl">Available</div></div>
+</div>
+
+<div id="availBanner"></div>
+
+<div class="legend">
+  <div><span class="ldot" style="background:rgba(34,201,122,.5)"></span>Free</div>
+  <div><span class="ldot" style="background:rgba(255,78,106,.5)"></span>Occupied (tap for details)</div>
+</div>
+
+<div class="filter-bar">
+  <button class="fbtn aa" onclick="setFilter('all',this,'aa')" id="fa">All Seats</button>
+  <button class="fbtn" onclick="setFilter('free',this,'af')" id="ff">🟢 Free Only</button>
+  <button class="fbtn" onclick="setFilter('occ',this,'ao')" id="fo">🔴 Occupied</button>
+</div>
+
+<div class="section-label">Seat Map</div>
+<div class="seat-grid" id="seatGrid"></div>
+<div id="lastUpdated"></div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h3>Seat <span id="mSeatNo">—</span></h3>
+    <div id="detailRows"></div>
+    <button class="close-sheet" onclick="closeSheet()">Close</button>
+  </div>
+</div>
+
+<script>
+// =============================================
+// IMPORTANT: Yeh BIN_ID admin file se copy karein
+// Admin file pehli baar kholne ke baad
+// browser console mein ya localStorage mein milega
+// Ya neeche hardcode kar dein:
+// =============================================
+const API_KEY = "$2a$10$/SwqwYO.WuH9GjlWLZmpKeFnTQrUXQ9TfH1/mtW/Sz5y6fNrM2uua";
+let BIN_ID = "69dcc8a0856a6821892b094d"; // 👈 Admin file kholne ke baad milega
+
+let seats = {};
+let filterMode = "all";
+
+async function loadData(){
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{headers:{"X-Master-Key":API_KEY}});
+    const d=await r.json();
+    seats=d.record.seats||{};
+    renderAll();
+    document.getElementById("lastUpdated").textContent="Last updated: "+new Date().toLocaleTimeString("hi-IN");
+  }catch(e){
+    document.getElementById("lastUpdated").textContent="⚠️ Data load nahi hua. Reload karein.";
+  }
+}
+
+function renderAll(){
+  const o=Object.keys(seats).length;
+  document.getElementById("sOcc").textContent=o;
+  document.getElementById("sFree").textContent=101-o;
+  const b=document.getElementById("availBanner");
+  if(101-o>0){
+    b.innerHTML=`<div class="avail-banner has-free"><div class="big">${101-o} Seats Available</div><p>Abhi admission le sakte hain</p></div>`;
+  } else {
+    b.innerHTML=`<div class="avail-banner full"><div class="big">Library Full</div><p>Koi seat abhi free nahi hai</p></div>`;
+  }
+  renderGrid();
+}
+
+function renderGrid(){
+  const g=document.getElementById("seatGrid"); g.innerHTML="";
+  for(let i=1;i<=101;i++){
+    const s=seats[i];
+    const isOcc=!!s;
+    if(filterMode==="free"&&isOcc)continue;
+    if(filterMode==="occ"&&!isOcc)continue;
+    const d=document.createElement("div");
+    d.className="seat "+(isOcc?"occ":"free");
+    d.innerHTML=`<span class="sn">${i}</span><span class="st">${isOcc?"OCC":"FREE"}</span>`;
+    if(isOcc)d.onclick=()=>openSheet(i,s);
+    g.appendChild(d);
+  }
+}
+
+function openSheet(n,s){
+  document.getElementById("mSeatNo").textContent=n;
+  document.getElementById("detailRows").innerHTML=`
+    <div class="drow"><div class="key">Student Name</div><div class="dval">${s.name}</div></div>
+    <div class="drow"><div class="key">Village / Area</div><div class="dval">${s.village||"—"}</div></div>
+    <div class="drow"><div class="key">Mobile No.</div><div class="dval">${s.mobile||"—"}</div></div>
+    <div class="drow"><div class="key">Joining Date</div><div class="dval">${s.doj||"—"}</div></div>
+    <div class="drow"><div class="key">Fee Status</div><div class="dval" style="color:var(--green)">${s.fee||"—"}</div></div>
+    ${s.shift?`<div class="drow"><div class="key">Shift</div><div class="dval">${s.shift}</div></div>`:""}
+  `;
+  document.getElementById("overlay").classList.add("open");
+}
+function closeSheet(){document.getElementById("overlay").classList.remove("open")}
+
+function setFilter(mode,btn,cls){
+  filterMode=mode;
+  ["fa","ff","fo"].forEach(id=>document.getElementById(id).className="fbtn");
+  btn.className="fbtn "+cls; renderGrid();
+}
+
+document.getElementById("overlay").onclick=e=>{if(e.target===e.currentTarget)closeSheet()};
+
+// Load immediately then every 15 seconds
+loadData();
+setInterval(loadData,3000);
+</script>
+</body>
+</html>
